@@ -3,17 +3,27 @@ from random import *
 from numpy import *
 from math import *
 
+# A sample represents a pixel in one frame
+# sample feature is a vector of integers representing it's data
+# the sample feature vector can be its r g b components but also it's gradient
+# or other information
 class Sample:
 	def __init__(self,feature,frame = 0 ):
+		""" Creates a new Sample
+		feature -- List - the feature vector
+		frame -- Int -- the movie frame where the sample was taken """ 
 		self.feature_count = len(feature)
 		self.feature = feature
 		self.frame = frame
-	def getLength(self):
+	def getLength(self):	
+		""" Returns the length of the feature vector """
 		return len(self.feature)
 
 class Bounds:
-	#creates a new Bounds for feature_count features, with values between 0 and max_value, inclusive. 
 	def __init__(self,feature_count,max_value):
+		"""Creates a new Bounding box around feature values
+		feature_count -- Int -- The length of the feature vectors
+		max_value -- The values of the feature vector will be in [0,max_value]"""
 		self.feature_count = feature_count
 		self.max_value = max_value
 		self.bounds = zeros((feature_count,2)) #bounds[f][0] is lower inclusive bound for feature f, #bounds[f][1] is higher inclusive bound for feature f
@@ -33,18 +43,23 @@ class Bounds:
 	def getMax(self,feature):
 		return self.bounds[feature][1]
 	def copy(self,bounds):
+		"""Copy a Bounds into this one
+		bounds -- Bounds -- The bound that will be copied into self"""
 		i = self.feature_count
 		while(i):
 			i = i-1
 			self.bounds[i][0] = bounds.bounds[i][0]
 			self.bounds[i][1] = bounds.bounds[i][1]
 	def dup(self):
+		"""Creates a duplicate object of self"""
 		b = Bounds(self.feature_count,self.max_value)
 		b.copy(self)
 		return b
 	def size(self,feature):
+		"""Returns the count of different values inside the bounds for a single feature of the feature vector"""
 		return self.bounds[feature][1]-self.bounds[feature][0] + 1
 	def show(self):
+		"""Prints the bouding box on the standard output"""
 		print 'Bounds:',
 		for b in self.bounds:
 			print '[',b[0],',',b[1],']',
@@ -80,6 +95,48 @@ class Tree:
 		else:
 			if(self.right):
 				self.right.addSample(sample)
+	def insertSample(self,sample,level_count):
+		self.samples.append(sample)
+		if(self.level >= level_count -1):
+			return
+		if(sample.feature[self.feature_index] < self.feature_value):
+			if(self.left):
+				self.left.insertSample(sample,level_count)
+			else:
+				feature = randint(0,self.feature_count-1)
+				value = 0
+				if(self.bounds.size(feature) < 2):
+					return
+				elif(self.bounds.size(feature) == 2):
+					value = 1;
+				else:
+					value = randint(self.bounds.getMin(feature)+1,
+								self.bounds.getMax(feature))
+				self.left = Tree(self.feature_count,feature,self.max_value,value,self.level + 1)
+				b = self.bounds.dup()
+				b.setMax(self.feature_index,self.feature_value -1)
+				self.left.insertSample(sample,level_count)
+		else:
+			if(self.right):
+				self.right.insertSample(sample,level_count)
+			else:
+				feature = randint(0,self.feature_count-1)
+				value = 0
+				if(self.bounds.size(feature) < 2):
+					return
+				elif(self.bounds.size(feature) == 2):
+					value = 1;
+				else:
+					value = randint(self.bounds.getMin(feature)+1,
+								self.bounds.getMax(feature))
+				self.right = Tree(self.feature_count,feature,self.max_value,value,self.level + 1)
+				b = self.bounds.dup()
+				b.setMin(self.feature_index,self.feature_value)
+				self.right.insertSample(sample,level_count)
+
+
+
+			
 	def getDeepClass(self,sample):
 		if(self.left == None and self.right == None):
 			return (self.samples,self.level)
