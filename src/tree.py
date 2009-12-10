@@ -58,12 +58,20 @@ class Bounds:
 	def size(self,feature):
 		"""Returns the count of different values inside the bounds for a single feature of the feature vector"""
 		return self.bounds[feature][1]-self.bounds[feature][0] + 1
+	def volume(self):
+		"""Returns the volume of the bound, or the product of the feature bound sizes"""
+		vol = 1.0
+		maxvol = 1.0
+		for b in self.bounds:
+			vol = vol*( b[1]-b[0] + 1)
+			maxvol = maxvol * (self.max_value+1)
+		return vol/maxvol
 	def show(self):
 		"""Prints the bouding box on the standard output"""
 		print 'Bounds:',
 		for b in self.bounds:
 			print '[',b[0],',',b[1],']',
-		print ''
+		print 'vol:',self.volume()
 
 class Tree:
 	def __init__(self,feature_count,feature_index,max_value,feature_value,level):
@@ -74,6 +82,7 @@ class Tree:
 		self.feature_count = feature_count	#the number of features that this three can sort
 		self.feature_index = feature_index	#the feature splitten at this level
 		self.feature_value = feature_value	#the  subtree on the left have values for feature_index < feature_value, >= on the right
+		self.max_value = max_value
 		self.level = level
 	def setLeft(self,left):
 		self.left = left
@@ -95,13 +104,15 @@ class Tree:
 		else:
 			if(self.right):
 				self.right.addSample(sample)
-	def insertSample(self,sample,level_count):
+	def insert_sample(self,sample,level_count,bounds,random = True):
 		self.samples.append(sample)
+		self.bounds = bounds;
 		if(self.level >= level_count -1):
 			return
 		if(sample.feature[self.feature_index] < self.feature_value):
 			if(self.left):
-				self.left.insertSample(sample,level_count)
+				b = self.left.bounds
+				self.left.insert_sample(sample,level_count,b)
 			else:
 				feature = randint(0,self.feature_count-1)
 				value = 0
@@ -109,16 +120,19 @@ class Tree:
 					return
 				elif(self.bounds.size(feature) == 2):
 					value = 1;
-				else:
+				elif(random):
 					value = randint(self.bounds.getMin(feature)+1,
 								self.bounds.getMax(feature))
+				else:
+					value = int(self.bounds.getMin(feature) + self.bounds.getMax(feature))/2
 				self.left = Tree(self.feature_count,feature,self.max_value,value,self.level + 1)
 				b = self.bounds.dup()
 				b.setMax(self.feature_index,self.feature_value -1)
-				self.left.insertSample(sample,level_count)
+				self.left.insert_sample(sample,level_count,b)
 		else:
 			if(self.right):
-				self.right.insertSample(sample,level_count)
+				b = self.right.bounds
+				self.right.insert_sample(sample,level_count,b)
 			else:
 				feature = randint(0,self.feature_count-1)
 				value = 0
@@ -126,61 +140,75 @@ class Tree:
 					return
 				elif(self.bounds.size(feature) == 2):
 					value = 1;
-				else:
+				elif(random):
 					value = randint(self.bounds.getMin(feature)+1,
 								self.bounds.getMax(feature))
+				else:
+					value = int(self.bounds.getMin(feature) + self.bounds.getMax(feature))/2
 				self.right = Tree(self.feature_count,feature,self.max_value,value,self.level + 1)
 				b = self.bounds.dup()
 				b.setMin(self.feature_index,self.feature_value)
-				self.right.insertSample(sample,level_count)
-
-
-
-			
+				self.right.insert_sample(sample,level_count,b)
+	def insertSample(self,sample,level_count,random = True):
+		self.insert_sample(sample,level_count,self.bounds,random)
 	def getDeepClass(self,sample):
 		if(self.left == None and self.right == None):
-			return (self.samples,self.level)
+			return self
 		if(sample.feature[self.feature_index] < self.feature_value):
 			if(self.left):
 				return self.left.getDeepClass(sample)
 			else:
-				return ([],self.level)
+				return self
 		else:
 			if(self.right):
 				return self.right.getDeepClass(sample)
 			else:
-				return ([],self.level)
+				return self
 	def getHiClass(self,sample):
 		if(self.left == None and self.right == None):
-			return (self.samples,self.level)
+			return self
 		if(sample.feature[self.feature_index] < self.feature_value):
 			if(self.left and self.left.getSize > 0):
 				return self.left.getHiClass(sample)
 			else:
-				return (self.samples,self.level)
+				return self
 		else:
 			if(self.right and self.right.getSize > 0):
 				return self.right.getHiClass(sample)
 			else:
-				return (self.samples,self.level)
+				return self
 	def getSize(self):
 		return len(self.samples)
 	def isLeaf(self):
 		return self.left == None and self.right == None
-	def getLeafSizes(self):
-		if len(self.samples) == 0:
-			return []
+	def getLeaves(self):
 		if self.left != None and self.right != None:
-			A = self.left.getLeafSizes()
-			B = self.right.getLeafSizes()
+			A = self.left.getLeaves()
+			B = self.right.getLeaves()
 			A.extend(B)
 			return A
-		elif self.left != None :
-			return self.left.getLeafSizes()
-		elif self.right != None :
-			return self.right.getLeafSizes()
+		elif self.left != None:
+			return self.left.getLeaves()
+		elif self.right != None:
+			return self.right.getLeaves()
 		else:
-			return [len(self.samples)]
+			return [self]
+	def getLeafSizes(self):
+		leafsizes = []
+		for leaf in self.getLeaves():
+			if len(leaf.samples) > 0 :
+				leafsizes.append(len(leaf.samples))
+		return leafsizes
+	def getLeafDensities(self):
+		leafdensities = []
+		totalvolume = 0.0
+		for leaf in self.getLeaves():
+			if(len(leaf.samples)> 0):
+				totalvolume += leaf.bounds.volume()
+				leafdensities.append(len(leaf.samples)/float(leaf.bounds.volume()))
+		leafdensities = [ leaf * totalvolume for leaf in leafdensities]
+		return leafdensities
+
 	def getEntropy(self):
 		size	  = float(len(self.samples))
 		leafsizes = self.getLeafSizes()
@@ -219,31 +247,7 @@ class Tree:
 		if(self.right):
 			self.right.showAll()
 
-def tree_new_random_rec(bounds,feature_count,max_value,level,level_count):
-	if(level >= level_count):
-		return None
-	feature = randint(0,feature_count -1)
-	if(bounds.size(feature) >= 2):
-		value = 0
-		if(bounds.size(feature) == 2):
-			value = 1
-		else:
-			value = random.randint(bounds.getMin(feature)+1, bounds.getMax(feature))
-		t = Tree(feature_count,feature,max_value,value,level)
-		t.setBounds(bounds)
-		bl = bounds.dup()
-		bl.setMax(feature,value -1)
-		br = bounds.dup()
-		br.setMin(feature,value)
-		t.setLeft(tree_new_random_rec(bl,feature_count,max_value,level+1,level_count))
-		t.setRight(tree_new_random_rec(br,feature_count,max_value,level+1,level_count))
-		return t
-	else:
-		return Tree(feature_count,0,max_value,0,level)
 
-def tree_new_random(feature_count,max_value,level_count):
-	b = Bounds(feature_count,max_value)
-	return tree_new_random_rec(b,feature_count,max_value,0,level_count)
 
 class TreeSet:
 	def __init__(self,tree_count,feature_count,max_value,level_count):
@@ -266,17 +270,25 @@ class TreeSet:
 				votes = votes + 1
 		return float(votes)/float(len(self.trees))
 
+def sample_new_random(feature_count,max_value,frame = 0):
+	return Sample([randint(0,max_value) for x in range(0,feature_count)],frame)
+
 def main():
 	print "yo"
-	t = tree_new_random(3,255,5)
-	s = Sample([6,6,6])
-	t.addSample(s)
-	t.addSample(s)
-	t.addSample(s)
-	s = Sample([66,66,66])
-	t.addSample(s)
-	t.showAll()
+	t = Tree(3,1,255,128,0)
+	for x in range(0,50):
+		s = sample_new_random(3,255)
+		t.insertSample(s,10,True)
+	
+	#s = Sample([6,6,6])
+	#t.insertSample(s,5)
+	#t.insertSample(s,5)
+	#t.insertSample(s,5)
+	#s = Sample([254,255,250])
+	#t.insertSample(s,5)
+	#t.showAll()
 	print t.getLeafSizes()
+	print t.getLeafDensities()
 	print t.getEntropy()
 	return 0
 
@@ -290,6 +302,8 @@ if __name__ == "__main__":
 #	- look only at leaves
 #	- look at whole tree
 #	- how does the size of class correlates to the likelyness to belong to the bg.
-# - read a video
-# - make the tree grow lazily
+# - read/write a video / sequence of images
+# - make the tree grow lazily : done
+# - make the tree grow with a maximum / minimum size
+# - compute entropy on densities instead of sizes.
 
