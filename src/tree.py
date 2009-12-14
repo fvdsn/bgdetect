@@ -151,34 +151,32 @@ class Tree:
 				self.right.insert_sample(sample,level_count,b)
 	def insertSample(self,sample,level_count,random = True):
 		self.insert_sample(sample,level_count,self.bounds,random)
-	def getDeepClass(self,sample):
-		if(self.left == None and self.right == None):
-			return self
-		if(sample.feature[self.feature_index] < self.feature_value):
-			if(self.left):
-				return self.left.getDeepClass(sample)
-			else:
-				return self
-		else:
-			if(self.right):
-				return self.right.getDeepClass(sample)
-			else:
-				return self
 	def getHiClass(self,sample):
 		if(self.left == None and self.right == None):
 			return self
 		if(sample.feature[self.feature_index] < self.feature_value):
-			if(self.left and self.left.getSize > 0):
+			if(self.left and self.left.getSize() > 0):
 				return self.left.getHiClass(sample)
 			else:
 				return self
 		else:
-			if(self.right and self.right.getSize > 0):
+			if(self.right and self.right.getSize() > 0):
 				return self.right.getHiClass(sample)
 			else:
 				return self
-	def getSize(self):
-		return len(self.samples)
+	def getSize(self,first = 0, last = -1):
+		if(last < first):
+			return len(self.samples)
+		else:
+			return len(self.getSamples(first,last))
+	def getDensity(self,first = 0, last = -1):
+		size = float(self.getSize(first,last) - 1.0)
+		if(size > 0.0):
+			return size/float(self.bounds.getVolume())
+		else:
+			return 0.0
+	def getSamples(self,first,last):
+		return [ x for x in self.samples if (x.frame >= first and x.frame <= last)] 
 	def isLeaf(self):
 		return self.left == None and self.right == None
 	def getLeaves(self):
@@ -193,25 +191,29 @@ class Tree:
 			return self.right.getLeaves()
 		else:
 			return [self]
-	def getLeafSizes(self):
+	def getLeafSizes(self,first = 0, last = -1):
 		leafsizes = []
 		for leaf in self.getLeaves():
-			if len(leaf.samples) > 0 :
-				leafsizes.append(len(leaf.samples))
+			size = leaf.getSize(first,last)
+			if size > 0 :
+				leafsizes.append(size)
 		return leafsizes
-	def getLeafDensities(self):
+	def getLeafDensities(self,first = 0, last = -1):
 		leafdensities = []
 		totalvolume = 0.0
 		for leaf in self.getLeaves():
-			if(len(leaf.samples)> 0):
+			size = leaf.getSize(first,last)
+			if(size > 1):
 				totalvolume += leaf.bounds.volume()
-				leafdensities.append(len(leaf.samples)/float(leaf.bounds.volume()))
+				leafdensities.append((size-1)/float(leaf.bounds.volume()))
+			else:
+				leafdensities.append(0.0)
+				#continue
 		leafdensities = [ leaf * totalvolume for leaf in leafdensities]
 		return leafdensities
-
-	def getEntropy(self):
+	def getEntropy(self,first = 0, last = -1):
 		size	  = float(len(self.samples))
-		leafsizes = self.getLeafSizes()
+		leafsizes = self.getLeafSizes(first,last)
 		H = 0.0
 		if(size == 0.0):
 			return 1
@@ -221,14 +223,35 @@ class Tree:
 			else:
 				H += -(leaf/size)*log(leaf/size,2)
 		return H
-	def isSampleBG(self,sample):
-		leaf_size = self.getLeafSizes()
+	def getDensityEntropy(self,first = 0, last = -1):
+		leafdensity = self.getLeafDensities(first,last)
+		density = float(sum(leafdensity));
+		H = 0.0
+		if(density == 0.0):
+			return 1
+		for leaf in leafdensity:
+			if leaf == 0.0:
+				continue
+			else:
+				H += -(leaf/density)*log(leaf/density,2)
+		return H
+	def isSampleBG(self,sample,first = 0, last = -1):
+		leaf_size = self.getLeafSizes(first,last)
 		sample_class = tree.getHiClass(sample)
 		mean = float(sum(leaf_size))/float(len(leaf_size))
-		if(len(sample_class) >= mean):
+		if(sample_class.getSize(first,last) >= mean):
 			return True
 		else:
 			return False
+	def isSampleBG2(self,sample,first = 0,last =-1):
+		leaf_density = self.getDensities(first,last)
+		sample_class = tree.getHiClass(sample)
+		mean = float(sum(leaf_density))/float(len(leaf_size))
+		if(sample_class.getDensity(first,last) >= mean):
+			return True
+		else:
+			return False
+
 	def show(self):
 		i = self.level
 		while(i):
@@ -247,8 +270,6 @@ class Tree:
 		if(self.right):
 			self.right.showAll()
 
-
-
 class TreeSet:
 	def __init__(self,tree_count,feature_count,max_value,level_count):
 		self.tree_count = tree_count
@@ -259,14 +280,20 @@ class TreeSet:
 		i = tree_count
 		while(i):
 			i = i - 1
-			self.trees.append(tree_new_random(feature_count,max_value,level_count))
-	def addSample(self,sample):
+			self.trees.append(Tree(feature_count,random(0,feature_count-1),max_value,random(0,max_value),0))
+	def insertSample(self,sample):
 		for t in self.trees:
-			t.addSample(sample)
+			t.insertSample(sample,self.level_count)
 	def isSampleBG(self,sample):
 		votes = 0
 		for t in self.trees:
 			if(t.isSampleBG(sample)):
+				votes = votes + 1
+		return float(votes)/float(len(self.trees))
+	def isSampleBG2(self,sample):
+		votes = 0
+		for t in self.trees:
+			if(t.isSampleBG2(sample)):
 				votes = votes + 1
 		return float(votes)/float(len(self.trees))
 
@@ -276,7 +303,7 @@ def sample_new_random(feature_count,max_value,frame = 0):
 def main():
 	print "yo"
 	t = Tree(3,1,255,128,0)
-	for x in range(0,50):
+	for x in range(0,400):
 		s = sample_new_random(3,255)
 		t.insertSample(s,10,True)
 	
@@ -290,6 +317,7 @@ def main():
 	print t.getLeafSizes()
 	print t.getLeafDensities()
 	print t.getEntropy()
+	print t.getDensityEntropy()
 	return 0
 
 if __name__ == "__main__":
