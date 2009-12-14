@@ -11,6 +11,8 @@ class Ima :
 		self.width = im.size[0]
 		self.height = im.size[1]
 		self.data = list(im.getdata())
+
+		#Convolution matrix for sobel operator
 		self.x = {}
 		self.x[(0,0)] = 1
 		self.x[(1,0)] = 2
