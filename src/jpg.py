@@ -4,8 +4,8 @@ from math import sqrt
 class Ima :
 	
 	
-	def __init__(self, image) :
-		
+	def __init__(self, image, frame) :
+		self.frame = frame
 		im = Image.open(image)
 		self.mode = im.mode
 		self.width = im.size[0]
@@ -39,27 +39,43 @@ class Ima :
 		Params : coord : un tuple (x,y)
 	"""
 	def getPixel(self,coord) :
-		if(coord[0] >= self.width or coord[0] < 0 or coord[1] >= self.height or coord[1] < 0) :
-			return (0,0,0)
-		else :				
-			return self.data[coord[1] * self.width + coord[0]]
+		x = coord[0]
+		y = coord[1]
+		if(coord[0] >= self.width) :
+			x = self.width - 1
+		if(coord[0] < 0) :
+			x = 0
+		if(coord[1] >= self.height) :
+			y = self.height -1
+		if(coord[1] < 0) :
+			y = 0
+		return self.data[y * self.width + x]
 		
+	"""
+	save the grad image
+	"""
 	def gradimage(self, image) :
 		imNew=Image.new(self.mode ,(self.width, self.height)) 
 		imNew.putdata(self.gradient()) 
 		imNew.save(image)
 
-		
+	"""
+		list with the modulo of all gradient
+		cost in time high
+	"""
 	def gradient(self) :
-		self.gr = []
+		gr = []
 		for j in xrange(0, self.height) :
 			for i in xrange(0, self.width) :
+				#print self.getSample((i,j))
 				self.gr.append(self.grad((i, j)))
 			
 
-		return self.gr
+		return gr
 		
-		
+	"""
+		module du gradient
+	"""	
 	def grad(self, coord) :
 		x = self.gx(coord)
 		y = self.gy(coord)
@@ -69,8 +85,7 @@ class Ima :
 		return (int(g1 * 255 / 1081 ), int(g2 * 255 / 1081), int(g3 * 255 / 1081))
 		
 	def gx(self, coord) :
-		return self.g(coord, self.x)
-		
+		return self.g(coord, self.x)		
 		
 	def gy(self, coord) :
 		return self.g(coord, self.y)
@@ -86,12 +101,28 @@ class Ima :
 				sum3 += op[(i + 1,j + 1)] * self.getPixel((coord[0] + i, coord[1] + j))[2]
 				
 		return (sum1, sum2, sum3)
+	
+	def getSample(self, coord) :
+		pixel = self.getPixel(coord)
+		intens = (pixel[0] + pixel[1] + pixel[2]) / 3
+		gx = self.gx(coord)
+		gx = (((gx[0] + gx[1] + gx[2]) / 3) + 1024 ) / 2048.0 * 255
+		gx = int(gx)
+		gy = self.gy(coord)
+		gy = (((gy[0] + gy[1] + gy[2]) / 3) + 1024 ) /2048.0 * 255
+		gy = int(gy)
+		return [intens, gx, gy]
 		
+	def getFrame() :
+		return self.frame
 
-i = Ima("test/1.jpg")
-#print i.getPixel((0,-1))
-#print i.gx((1,1))
-#print i.gy((1,1))
-#print i.grad((1,1))
-#print i.gradient()
-i.gradimage("grad2.jpg")
+
+if __name__ == "__main__":
+	i = Ima("test/2.jpg", 1)
+	print i.getSample((0,2))
+	#print i.getPixel((0,-1))
+	#print i.gx((1,1))
+	#print i.gy((1,1))
+	#print i.grad((1,1))
+	#print i.gradient()
+	i.gradimage("grad2.jpg")
