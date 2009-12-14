@@ -280,7 +280,7 @@ class TreeSet:
 		i = tree_count
 		while(i):
 			i = i - 1
-			self.trees.append(Tree(feature_count,random(0,feature_count-1),max_value,random(0,max_value),0))
+			self.trees.append(Tree(feature_count,randint(0,feature_count-1),max_value,randint(0,max_value),0))
 	def insertSample(self,sample):
 		for t in self.trees:
 			t.insertSample(sample,self.level_count)
