@@ -34,8 +34,7 @@ class Ima :
 		self.y[(2,0)] = -1
 		self.y[(2,1)] = -2
 		self.y[(2,2)] = -1
-		print self.x
-		print self.y
+	
 
 	""" 
 		Params : coord : un tuple (x,y)
@@ -115,7 +114,7 @@ class Ima :
 		gy = int(gy)
 		return [intens, gx, gy]
 		
-	def getFrame() :
+	def getFrame(self) :
 		return self.frame
 
 
