@@ -5,8 +5,8 @@ class Ima :
 	
 	
 	def __init__(self, image, frame) :
-		self.frame = frame
 		im = Image.open(image)
+		self.frame = frame		
 		self.mode = im.mode
 		self.width = im.size[0]
 		self.height = im.size[1]
@@ -32,8 +32,7 @@ class Ima :
 		self.y[(2,0)] = -1
 		self.y[(2,1)] = -2
 		self.y[(2,2)] = -1
-		print self.x
-		print self.y
+		
 
 	""" 
 		Params : coord : un tuple (x,y)

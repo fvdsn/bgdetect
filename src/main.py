@@ -25,12 +25,19 @@ def load(dossier_in) :
 	Image = []
 	i = 1
 	for file in os.listdir(dossier_in):
-		Image.append(Ima()))
+		
+		Image.append(jpg.Ima(dossier_in + "/" + file, i))
+		i += 1
+		print i
+		
+	print Image
 
 
 def main():
 	dossier_in = "in"
 	dossier_out = "out"
+	load(dossier_in)
 	return 0
 
-if __name__ == '__main__': main()
+if __name__ == '__main__': 
+	main()
