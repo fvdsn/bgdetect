@@ -114,7 +114,7 @@ class Ima :
 		gy = int(gy)
 		return [intens, gx, gy]
 		
-	def getFrame() :
+	def getFrame(self) :
 		return self.frame
 
 

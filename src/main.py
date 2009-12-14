@@ -30,8 +30,20 @@ def load(dossier_in) :
 		Image.append(jpg.Ima(dossier_in + "/" + file, i))
 		i += 1
 		print i
-		
+	coord = (90,60)
 	treeSet = TreeSet(20, 3, 255, 8)
+	for im in Image : 
+		s = Sample(im.getSample(coord), im.getFrame())
+		treeSet.insertSample(s)
+		
+	for im in Image :
+		s = Sample(im.getSample(coord), im.getFrame())
+		print treeSet.isSampleBG(s) , " " , im.getFrame()
+		print treeSet.isSampleBG2(s) , " " , im.getFrame()
+		print "----"
+		
+		
+	
 		
 	
 

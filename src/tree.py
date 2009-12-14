@@ -281,15 +281,18 @@ class TreeSet:
 		while(i):
 			i = i - 1
 			self.trees.append(Tree(feature_count,randint(0,feature_count-1),max_value,randint(0,max_value),0))
+			
 	def insertSample(self,sample):
 		for t in self.trees:
 			t.insertSample(sample,self.level_count)
+			
 	def isSampleBG(self,sample):
 		votes = 0
 		for t in self.trees:
 			if(t.isSampleBG(sample)):
 				votes = votes + 1
 		return float(votes)/float(len(self.trees))
+		
 	def isSampleBG2(self,sample):
 		votes = 0
 		for t in self.trees:
