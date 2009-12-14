@@ -237,7 +237,7 @@ class Tree:
 		return H
 	def isSampleBG(self,sample,first = 0, last = -1):
 		leaf_size = self.getLeafSizes(first,last)
-		sample_class = tree.getHiClass(sample)
+		sample_class = self.getHiClass(sample)
 		mean = float(sum(leaf_size))/float(len(leaf_size))
 		if(sample_class.getSize(first,last) >= mean):
 			return True
@@ -245,7 +245,7 @@ class Tree:
 			return False
 	def isSampleBG2(self,sample,first = 0,last =-1):
 		leaf_density = self.getDensities(first,last)
-		sample_class = tree.getHiClass(sample)
+		sample_class = self.getHiClass(sample)
 		mean = float(sum(leaf_density))/float(len(leaf_size))
 		if(sample_class.getDensity(first,last) >= mean):
 			return True
