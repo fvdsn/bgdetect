@@ -20,17 +20,27 @@
 #       MA 02110-1301, USA.
 import os
 import jpg
+from tree import *
 
 def load(dossier_in) :
 	Image = []
 	i = 1
 	for file in os.listdir(dossier_in):
-		Image.append(Ima()))
+		
+		Image.append(jpg.Ima(dossier_in + "/" + file, i))
+		i += 1
+		print i
+		
+	treeSet = TreeSet(20, 3, 255, 8)
+		
+	
 
 
 def main():
-	dossier_in = "in"
+	dossier_in = "train"
 	dossier_out = "out"
+	load(dossier_in)
 	return 0
 
-if __name__ == '__main__': main()
+if __name__ == '__main__': 
+	main()
