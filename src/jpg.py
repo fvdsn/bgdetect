@@ -11,6 +11,7 @@ class Ima :
 		self.width = im.size[0]
 		self.height = im.size[1]
 		self.data = list(im.getdata())
+		self.bg = {}
 
 		#Convolution matrix for sobel operator
 		self.x = {}
@@ -116,7 +117,27 @@ class Ima :
 		
 	def getFrame(self) :
 		return self.frame
-
+		
+	def setBG(self, coord, proba) :
+		self.bg[coord] = proba
+	
+	def getHeight(self) :
+		return self.height
+		
+	def getWidth(self) :
+		return self.width
+		
+	def getBG(self) :
+		return self.bg
+		
+	def save(self, dossier_in) :
+		data = []
+		for j in xrange(0, self.height) :
+			for i in xrange(0, self.width) :
+				data.append(int(self.bg[(i, j)] * 255))
+		imNew=Image.new(self.mode ,(self.width, self.height)) 
+		imNew.putdata(data) 
+		imNew.save(dossier_in + "/" + str(self.frame) + ".jpg")
 
 if __name__ == "__main__":
 	i = Ima("test/2.jpg", 1)
