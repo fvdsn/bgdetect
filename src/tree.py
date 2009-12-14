@@ -172,7 +172,7 @@ class Tree:
 	def getDensity(self,first = 0, last = -1):
 		size = float(self.getSize(first,last) - 1.0)
 		if(size > 0.0):
-			return size/float(self.bounds.getVolume())
+			return size/float(self.bounds.volume())
 		else:
 			return 0.0
 	def getSamples(self,first,last):
@@ -246,7 +246,7 @@ class Tree:
 	def isSampleBG2(self,sample,first = 0,last =-1):
 		leaf_density = self.getLeafDensities(first,last)
 		sample_class = self.getHiClass(sample)
-		mean = float(sum(leaf_density))/float(len(leaf_size))
+		mean = float(sum(leaf_density))/float(len(leaf_density))
 		if(sample_class.getDensity(first,last) >= mean):
 			return True
 		else:
