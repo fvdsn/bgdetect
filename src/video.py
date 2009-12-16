@@ -8,4 +8,4 @@ def avi2jpg(input, dossier) :
 	
 	
 if __name__ == "__main__":
-	avi2jpg("SAM_0302.AVI" , "test")
+	avi2jpg("SAM_0440.AVI" , "video")

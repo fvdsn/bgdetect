@@ -130,14 +130,24 @@ class Ima :
 	def getBG(self) :
 		return self.bg
 		
-	def save(self, dossier_in) :
+	def save(self, dossier_in, tolerance, filtre) :
 		data = []
 		for j in xrange(0, self.height) :
 			for i in xrange(0, self.width) :
-				data.append(int(self.bg[(i, j)] * 255))
+				bg = self.bgFilter(self.bg[(i, j)], tolerance, filtre)
+				data.append((bg, bg, bg))
 		imNew=Image.new(self.mode ,(self.width, self.height)) 
 		imNew.putdata(data) 
-		imNew.save(dossier_in + "/" + str(self.frame) + ".jpg")
+		imNew.save(dossier_in + "/" + str(self.frame) + ".png", "PNG")
+		
+	def bgFilter(self, val, tolerance, filtre) :
+		if filtre :
+			if val >= tolerance :
+				return 255
+			else :
+				return 0
+		else : 
+			return int(val * 255)
 
 if __name__ == "__main__":
 	i = Ima("test/2.jpg", 1)
