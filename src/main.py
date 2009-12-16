@@ -22,14 +22,14 @@ def load(dossier_in) :
 	
 	for j in xrange(0, Image[0].getHeight()) :
 			for i in xrange(0, Image[0].getWidth()) :
-				treeSet = TreeSet(20, 3, 255, 8)
+				treeSet = TreeSet(40, 3, 255, 8)
 				for im in Image : 
 					s = Sample(im.getSample((i,j)), im.getFrame())
 					treeSet.insertSample(s)
 		
 				for im in Image :
 					s = Sample(im.getSample((i,j)), im.getFrame())
-					im.setBG((i,j), treeSet.isSampleBG2(s))
+					im.setBG((i,j), treeSet.isSampleBG2(s,20))
 					#print treeSet.isSampleBG(s) , " " , im.getFrame()
 					
 					#print "----"
