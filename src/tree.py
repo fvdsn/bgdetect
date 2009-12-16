@@ -277,6 +277,8 @@ class TreeSet:
 		self.max_value = max_value
 		self.level_count = level_count
 		self.trees = []
+		self.sorted = False
+		self.sortrange = (0,-1)
 		i = tree_count
 		while(i):
 			i = i - 1
@@ -286,19 +288,70 @@ class TreeSet:
 		for t in self.trees:
 			t.insertSample(sample,self.level_count)
 			
-	def isSampleBG(self,sample):
+	def isSampleBG(self,sample,subset=-1, first = 0, last = -1):
+		subtrees = []
+		if(subset > 0):
+			self.sort2(first,last)
+			subtrees = self.trees[0:subset]
+		else:
+			subtrees = self.trees
+
 		votes = 0
-		for t in self.trees:
+		for t in subtrees:
 			if(t.isSampleBG(sample)):
 				votes = votes + 1
-		return float(votes)/float(len(self.trees))
+		return float(votes)/float(len(subtrees))
 		
-	def isSampleBG2(self,sample):
+	
+	def isSampleBG2(self,sample,subset=-1,first = 0, last = -1):
+		subtrees = []
+		if(subset > 0):
+			self.sort2(first,last)
+			subtrees = self.trees[0:subset]
+		else:
+			subtrees = self.trees
+			
 		votes = 0
-		for t in self.trees:
+		for t in subtrees:
 			if(t.isSampleBG2(sample)):
 				votes = votes + 1
-		return float(votes)/float(len(self.trees))
+		return float(votes)/float(len(subtrees))
+
+	def compare1(tree1,tree2,first = 0, last = -1):
+		h1 = tree1.getEntropy(first,last)
+		h2 = tree2.getEntropy(first,last)
+		if(h1 > h2):
+			return 1
+		elif(h1 == h2):
+			return 0
+		else:
+			return -1
+	
+	def sort1(first = 0, last = -1):
+		if(self.sorted and self.sortrange == (first,last)):
+			return
+		else:
+			self.trees.sort(self.compare1)
+			self.sorted = True
+			self.sortrange = (first,last)
+	
+	def compare2(tree1,tree2,first = 0, last = -1):
+		h1 = tree1.getDensityEntropy(first,last)
+		h2 = tree2.getDensityEntropy(first,last)
+		if(h1 > h2):
+			return 1
+		elif (h1 == h2):
+			return 0
+		else:
+			return -1
+	
+	def sort2(first = 0, last = -1):
+		if(self.sorted and self.sortange == (first,last)):
+			return
+		else:
+			self.trees.sort(self.compare2)
+			self.sorted = True
+			self.sortrange = (first,last)
 
 def sample_new_random(feature_count,max_value,frame = 0):
 	return Sample([randint(0,max_value) for x in range(0,feature_count)],frame)
